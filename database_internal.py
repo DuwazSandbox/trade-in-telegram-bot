@@ -125,8 +125,8 @@ class DatabaseInternal():
         self.url = url
         con = None
         try:
-            #con = psycopg2.connect(self.url, sslmode='require')
-            con = psycopg2.connect(self.url)
+            con = psycopg2.connect(self.url, sslmode='require')
+            #con = psycopg2.connect(self.url)
             cur = con.cursor()
             if not _is_table_exist(cur = cur, name = 'users'):
                 _create_table_users(cur)
