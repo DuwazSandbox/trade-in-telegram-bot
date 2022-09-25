@@ -284,7 +284,7 @@ def status(update: Update) -> None:
 
 
 def about(update: Update) -> None:
-    _send_text(update, text = 'Работаю на сервере Heroku\nИсходный код: ')
+    _send_text(update, text = 'Работаю на сервере Heroku\nИсходный код: https://github.com/DuwazSandbox/trade-in-telegram-bot')
 
 
 def common_start(update: Update, is_start: bool) -> None:
