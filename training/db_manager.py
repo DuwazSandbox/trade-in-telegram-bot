@@ -116,6 +116,9 @@ class DatabaseManager():
         return DatabaseError.Ok, supplies
 
     def _get_all_supply_users_info(self, supplies: list) -> (DatabaseError, dict):
+        if len(supplies) == 0:
+            return DatabaseError.Ok, {}
+
         user_ids = set()
         for supply in supplies:
             user_ids.add(supply['seller'])
@@ -134,6 +137,9 @@ class DatabaseManager():
         return DatabaseError.Ok, all_supply_users_info
 
     def _get_all_supply_sessions_info(self, supplies: list) -> (DatabaseError, dict):
+        if len(supplies) == 0:
+            return DatabaseError.Ok, {}
+
         session_ids = set()
         for supply in supplies:
             session_ids.add(supply['session_id'])
@@ -150,6 +156,9 @@ class DatabaseManager():
         return DatabaseError.Ok, all_supply_sessions_info
 
     def _get_all_supply_places_info(self, sessions_info: dict) -> (DatabaseError, list):
+        if len(sessions_info) == 0:
+            return DatabaseError.Ok, []
+
         place_ids = set()
         for session_info in sessions_info.values():
             place_ids.add(session_info['place_id'])
@@ -166,6 +175,9 @@ class DatabaseManager():
         return DatabaseError.Ok, all_supply_places_info
 
     def _get_all_supply_additional_info(self, supplies: list) -> (DatabaseError, dict):
+        if len(supplies) == 0:
+            return DatabaseError.Ok, {}
+
         additional_info = dict()
 
         status, users_info = self._get_all_supply_users_info(supplies)
@@ -186,6 +198,9 @@ class DatabaseManager():
         return DatabaseError.Ok, additional_info
 
     def _make_supplies_info(self, supplies) -> (DatabaseError, list):
+        if len(supplies) == 0:
+            return DatabaseError.Ok, []
+
         status, additional_info = self._get_all_supply_additional_info(supplies)
         if status != DatabaseError.Ok:
             return status, []
