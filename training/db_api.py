@@ -7,9 +7,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def _quote(text: str) -> str:
-    return "'{}'".format(text)
-
 # db works with reverse copy
 def _reverse_date(date: str) -> str:
     return '.'.join(date.split('.')[::-1])
