@@ -1,0 +1,77 @@
+[
+    {
+        "coach": "HackeT_T",
+        "places": [
+          {
+            "name": "СКА",
+            "schedule": [
+              {
+                "time": "8:00",
+                "weekday": "ВС",
+                "info_prefix": "🔴"
+              },
+              {
+                "time": "9:00",
+                "weekday": "ВС",
+                "info_prefix": "🟡"
+              },
+              {
+                "time": "10:00",
+                "weekday": "ВС",
+                "info_prefix": "🟢"
+              }
+            ]
+          },
+          {
+            "name": "Алмаз-Антей",
+            "schedule": [
+              {
+                "time": "19:45",
+                "weekday": "ПН",
+                "info_prefix": "🟢"
+              },
+              {
+                "time": "19:45",
+                "weekday": "СР",
+                "info_prefix": "🟢"
+              },
+              {
+                "time": "20:52",
+                "weekday": "ПН",
+                "info_prefix": "🟡🟠🔴"
+              },
+              {
+                "time": "20:52",
+                "weekday": "СР",
+                "info_prefix": "🟡🟠🔴"
+              }
+            ]
+          },
+          {
+            "name": "МСГ",
+            "schedule": [
+              {
+                "time": "7:00",
+                "weekday": "ПН",
+                "info_prefix": "🟡🟠🔴"
+              },
+              {
+                "time": "7:00",
+                "weekday": "СР",
+                "info_prefix": "🟡🟠🔴"
+              },
+              {
+                "time": "7:00",
+                "weekday": "ВТ",
+                "info_prefix": "🟢"
+              },
+              {
+                "time": "7:00",
+                "weekday": "ЧТ",
+                "info_prefix": "🟢"
+              }
+            ]
+          }
+        ]
+    }
+]

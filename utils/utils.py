@@ -9,13 +9,12 @@ def nearest_weekday(day_start: datetime.date, weekday: int) -> datetime.date:
         days_ahead += 7
     return day_start + datetime.timedelta(days_ahead)
 
-def weekday_name(weekday_id: str) -> str:
+def weekday_id(weekday_name: str) -> int:
     name = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС']
-    id = int(weekday_id)
-    if id < 0 or id >= 7:
-        return ''
-    else:
-        return name[id]
+    for i in range(7):
+        if weekday_name == name[i]:
+            return i
+    return -1
 
 def is_group_chat(update: Update) -> bool:
     if (update is not None and
