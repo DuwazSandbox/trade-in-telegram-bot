@@ -21,6 +21,6 @@ def is_group_chat(update: Update) -> bool:
         update.message is not None and
         update.message.chat is not None and
         update.message.chat.type is not None and
-        update.message.chat.type == 'group'):
+        update.message.chat.type in [Chat.GROUP, Chat.SUPERGROUP]):
         return True
     return False
