@@ -1,0 +1,9 @@
+[
+    {
+        "coach": "coach_telegram_nickname",
+        "pool": "СКА",
+        "session": "🔴 ВС 8:00",
+        "people": ["client_telegram_nickname_1", "client_telegram_nickname_2"],
+        "people_count": 9
+    }
+]
