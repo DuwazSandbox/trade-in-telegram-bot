@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from telegram import Update
+from telegram import Chat, Update
 import datetime
 
 def nearest_weekday(day_start: datetime.date, weekday: int) -> datetime.date:
