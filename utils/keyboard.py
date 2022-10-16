@@ -42,3 +42,10 @@ class KeyboardManager:
 
         func = self._update.message.reply_text if self._is_first_msg else self._update.callback_query.message.edit_text
         func(self._text, reply_markup=InlineKeyboardMarkup(self._keyboard))
+
+    @staticmethod
+    def make_yes_no_dialog(yes: dict, no: dict) -> None:
+        return InlineKeyboardMarkup([[
+            InlineKeyboardButton(yes['text'], callback_data = yes['callback']),
+            InlineKeyboardButton(no['text'], callback_data = no['callback'])
+        ]])

@@ -31,6 +31,7 @@ QUERY_CREATE_TABLE_PLACES = (
 QUERY_CREATE_TABLE_SESSIONS = (
     'CREATE TABLE sessions ('
         'id serial PRIMARY KEY, '
+        'admin VARCHAR (255) NOT NULL, '
         'place_id INT NOT NULL REFERENCES places (id), '
         'time VARCHAR (5) NOT NULL, '
         'weekday VARCHAR (3) NOT NULL, '
@@ -100,6 +101,10 @@ class DatabaseAPI(DatabaseInternal):
             return status
 
         for updated_data in data:
+            if 'admin' not in updated_data:
+                logger.critical('not found admin')
+                continue
+
             if 'places' not in updated_data:
                 logger.critical('not found any places')
                 continue
@@ -145,6 +150,7 @@ class DatabaseAPI(DatabaseInternal):
                         status = self.insert(
                             table = 'sessions',
                             data = {
+                                'admin': updated_data['admin'],
                                 'place_id': place_id,
                                 'weekday': schedule['weekday'],
                                 'time': schedule['time'],
@@ -198,7 +204,7 @@ class DatabaseAPI(DatabaseInternal):
 
     def get_session_info(self, session_id: int) -> (DatabaseError, dict):
         status, sessions_info = self.select(
-            get_fields = ['id', 'place_id', 'weekday', 'time', 'info_prefix'],
+            get_fields = ['id', 'admin', 'place_id', 'weekday', 'time', 'info_prefix'],
             table = 'sessions',
             wheres = {'id': session_id}
         )
@@ -389,6 +395,18 @@ class DatabaseAPI(DatabaseInternal):
             get_fields = ['id', 'nick', 'fullname'],
             table = 'users',
             wheres = {'id': user_id}
+        )
+
+        if status != DatabaseError.Ok or len(db_user_info) == 0:
+            return status, {}
+
+        return status, db_user_info[0]
+
+    def get_user_info_by_nick(self, user_nick: str) -> (DatabaseError, dict):
+        status, db_user_info = self.select(
+            get_fields = ['id', 'nick', 'fullname'],
+            table = 'users',
+            wheres = {'nick': user_nick}
         )
 
         if status != DatabaseError.Ok or len(db_user_info) == 0:

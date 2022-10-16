@@ -53,7 +53,6 @@ class DatabaseManager():
 
         return self._db.add_sell_record(date, session_id, user_id)
 
-    # !!! добавить оповещение продавца и тренера о фиксации слота
     def add_buy_record(self, session_id: int, date: str, seller_id: int, user_id: int) -> DatabaseError:
         status, exists = self._db.buy_record_exists(date, session_id, user_id)
         if status != DatabaseError.Ok:
@@ -90,6 +89,7 @@ class DatabaseManager():
 
         return DatabaseError.Ok, {
             'time': session_info['time'],
+            'admin': session_info['admin'],
             'date': supply_info['trade_in_date'],
             'place_name': place_info['name'],
             'seller_id': user_info['id'],
@@ -262,6 +262,9 @@ class DatabaseManager():
 
     def get_user_info(self, user_id: int) -> (DatabaseError, dict):
         return self._db.get_user_info(user_id)
+
+    def get_user_info_by_nick(self, user_nick: str) -> (DatabaseError, dict):
+        return self._db.get_user_info_by_nick(user_nick)
 
     def add_user_info(self, user_id: int, nick: str, fullname: str) -> DatabaseError:
         status, exists = self._db.user_record_exists(user_id)

@@ -37,7 +37,7 @@ class TrainingActions:
             if action == 'sell':
                 sell_actions(update, req)
             elif action == 'buy':
-                buy_actions(update, req)
+                buy_actions(update, context, req)
             elif action == 'cancel':
                 cancel_actions(update, req)
             elif action == 'restart':
@@ -46,6 +46,10 @@ class TrainingActions:
                 status(update)
             elif action == 'about':
                 about(update)
+            elif action == 'confirm':
+                confirm(update, context, req)
+            elif action == 'reject':
+                reject(update, context, req)
             else:
                 logger.warning('Unknown command: %s', req)
 
@@ -227,30 +231,58 @@ def confirm_buy(update: Update, cmd: list, req: str) -> None:
     km.set_back_action(req[0:req.rfind(',')])
     km.update()
 
-def do_buy(update: Update, cmd: list, req: str) -> None:
+def send_buy_confirm(update: Update, context: CallbackContext, cmd: list, req: str) -> None:
     supply_id = cmd[1]
     if not supply_id.isdigit():
         _send_text(update, req = req, text = 'Возникла непредвиденная ошибка. Получены некорректные данные')
         return
 
+    status, supply_info = dbm.get_supply_info(int(supply_id)) 
+    if status != DatabaseError.Ok:
+        _send_text(update, text = 'Возникла непредвиденная ошибка. Не удалось получить данные о предложении')
+        return status
+
+    # !!! Добавить проверку актуальности заявки
+
+    user_data = update.callback_query.message.chat
+    text = "Пользователь @{} ({}) желает зафиксировать за собой ваш слот на {} {} в {}. Согласуйте с ним дальнейшие действия.\n\nУбедитесь в получении оплаты перед разрешением фиксации слота.".format(user_data.username, user_data.full_name, supply_info['time'], supply_info['date'], supply_info['place_name'])
+
+    reply_markup = KeyboardManager.make_yes_no_dialog(
+        yes = {
+            'text': 'Разрешить',
+            'callback': 'confirm,' + supply_id + ',' + str(user_data.id)
+        },
+        no = {
+            'text': 'Отклонить',
+            'callback': 'reject,' + supply_id + ',' + str(user_data.id)
+        }
+    )
+    context.bot.send_message(supply_info['seller_id'], text, reply_markup = reply_markup)
+
+    _send_text(update, text = 'Пользователю @{} ({}) отправлен запрос на фиксацию слота на {} {} в {}. Согласуйте с ним дальнейшие действия.'.format(supply_info['seller_nick'], supply_info['seller_fullname'], supply_info['time'], supply_info['date'], supply_info['place_name']))
+
+def do_buy(update: Update, supply_id: int, buyer_id: int) -> None:
     status, supply_info = dbm.get_supply_info(int(supply_id))
     if status != DatabaseError.Ok:
-        _send_text(update, req = req, text = 'Возникла непредвиденная ошибка. Не удалось получить данные о предложении')
-        return
+        _send_text(update, text = 'Возникла непредвиденная ошибка. Не удалось получить данные о предложении')
+        return status
 
-    status = dbm.add_buy_record(supply_info['session_id'], supply_info['date'], seller_id = supply_info['seller_id'], user_id = update.callback_query.message.chat.id)
+    status = dbm.add_buy_record(supply_info['session_id'], supply_info['date'], seller_id = supply_info['seller_id'], user_id = int(buyer_id))
     if status == DatabaseError.Ok:
-        _send_text(update, req = req, text = 'Фиксация слота {} {} в {} успешно произведена'.format(supply_info['time'], supply_info['date'], supply_info['place_name']))
-        return
+        _send_text(update, text = 'Фиксация слота {} {} в {} успешно произведена'.format(supply_info['time'], supply_info['date'], supply_info['place_name']))
+        return status
     elif status == DatabaseError.RecordExists:
-        _send_text(update, req = req, text = 'У вас уже имеется фиксация слота {} {} в {}'.format(supply_info['time'], supply_info['date'], supply_info['place_name']))
-        return
+        _send_text(update, text = 'Пользователь уже воспользовался другим предложением. Попытка фиксации вашего слота отменена')
+        return status
     elif status == DatabaseError.RecordUsed:
-        _send_text(update, req = req, text = 'Возможно кто-то уже зафиксировал этот слот. Зафиксировать слот за вами не удалось')
-        return
+        buyer_show_name = 'Кто-то'
+        if 'buyer_nick' in supply_info and 'buyer_fullname' in supply_info:
+            buyer_show_name = '@{} ({})'.format(supply_info['buyer_nick'], supply_info['buyer_fullname'])
+        _send_text(update, text = buyer_show_name + ' уже зафиксирован за вашим слотом. Текущее предложение отменено')
+        return status
     else:
-        _send_text(update, req = req, text = 'Возникла непредвиденная ошибка. Зафиксировать слот не удалось')
-        return
+        _send_text(update, text = 'Возникла непредвиденная ошибка. Зафиксировать слот не удалось')
+        return status
 
 #----- cancel actions
 
@@ -412,14 +444,14 @@ def restart(update: Update, context: CallbackContext) -> None:
 
 #----- actions
 
-def buy_actions(update: Update, req: str) -> None:
+def buy_actions(update: Update, context: CallbackContext, req: str) -> None:
     cmd = req.split(',')
     if len(cmd) == 1:
         choose_seller(update, req)
     elif len(cmd) == 2:
         confirm_buy(update, cmd, req)
     elif len(cmd) == 3:
-        do_buy(update, cmd, req)
+        send_buy_confirm(update, context, cmd, req)
     else:
         logger.warning('Unknown command: %s', req)
 
@@ -448,3 +480,74 @@ def sell_actions(update: Update, req: str) -> None:
         do_sell(update, cmd, req)
     else:
         logger.warning('Unknown command: %s', req)
+
+#----- confirm & reject
+
+def confirm(update: Update, context: CallbackContext, req: str) -> None:
+    cmd = req.split(',')
+
+    if len(cmd) != 3:
+        logger.warning('Unknown command: %s', req)
+        return
+
+    supply_id = cmd[1]
+    buyer_id = cmd[2]
+    if not supply_id.isdigit() or not buyer_id.isdigit():
+        _send_text(update, text = 'Возникла непредвиденная ошибка. Получены некорректные данные')
+        return
+
+    status = do_buy(update, int(supply_id), int(buyer_id))
+    if status == DatabaseError.Ok:
+        status, supply_info = dbm.get_supply_info(int(supply_id))
+        if status != DatabaseError.Ok:
+            _send_text(update, req = req, text = 'Возникла непредвиденная ошибка. Не удалось получить данные о предложении')
+            return
+
+        status, buyer_info = dbm.get_user_info(int(buyer_id))
+        if status != DatabaseError.Ok:
+            _send_text(update, text = 'Возникла непредвиденная ошибка. Не удалось получить данные о покупателе')
+            return
+
+        status, admin_info = dbm.get_user_info_by_nick(supply_info['admin'])
+        if status != DatabaseError.Ok:
+            _send_text(update, req = req, text = 'Возникла непредвиденная ошибка. Не удалось получить данные о тренере')
+            return
+
+        user_data = update.callback_query.message.chat
+
+        context.bot.send_message(int(buyer_id), 'Фиксация слота {} {} в {} у @{} ({}) успешно произведена. Сообщение о фиксации слота отправлено тренеру @{} ({})'.format(supply_info['time'], supply_info['date'], supply_info['place_name'], user_data.username, user_data.full_name, admin_info['nick'], admin_info['fullname']))
+
+        context.bot.send_message(admin_info['id'], '{} {} в {} вместо @{} ({}) придёт @{} ({})'.format(supply_info['time'], supply_info['date'], supply_info['place_name'], user_data.username, user_data.full_name, buyer_info['nick'], buyer_info['fullname']))
+    else:
+        do_reject(update, context, int(supply_id), int(buyer_id))
+
+def do_reject(update: Update, context: CallbackContext, supply_id: int, buyer_id: int) -> None:
+    status, supply_info = dbm.get_supply_info(supply_id)
+    if status != DatabaseError.Ok:
+        _send_text(update, text = 'Возникла непредвиденная ошибка. Не удалось получить данные о предложении')
+        return
+
+    status, buyer_info = dbm.get_user_info(buyer_id)
+    if status != DatabaseError.Ok:
+        _send_text(update, text = 'Возникла непредвиденная ошибка. Не удалось получить данные о покупателе')
+        return
+
+    _send_text(update, text = 'Предложение фиксации слота {} {} в {} для @{} ({}) было отменено'.format(supply_info['time'], supply_info['date'], supply_info['place_name'], buyer_info['nick'], buyer_info['fullname']))
+
+    user_data = update.callback_query.message.chat
+    context.bot.send_message(buyer_id, 'Фиксация слота {} {} в {} у @{} ({}) была отменена'.format(supply_info['time'], supply_info['date'], supply_info['place_name'], user_data.username, user_data.full_name))
+
+def reject(update: Update, context: CallbackContext, req: str) -> None:
+    cmd = req.split(',')
+
+    if len(cmd) != 3:
+        logger.warning('Unknown command: %s', req)
+        return
+
+    supply_id = cmd[1]
+    buyer_id = cmd[2]
+    if not supply_id.isdigit() or not buyer_id.isdigit():
+        _send_text(update, text = 'Возникла непредвиденная ошибка. Получены некорректные данные')
+        return
+
+    do_reject(update, context, int(supply_id), int(buyer_id))
