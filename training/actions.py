@@ -515,9 +515,13 @@ def confirm(update: Update, context: CallbackContext, req: str) -> None:
 
         user_data = update.callback_query.message.chat
 
-        context.bot.send_message(int(buyer_id), 'Фиксация слота {} {} в {} у @{} ({}) успешно произведена. Сообщение о фиксации слота отправлено тренеру @{} ({})'.format(supply_info['time'], supply_info['date'], supply_info['place_name'], user_data.username, user_data.full_name, admin_info['nick'], admin_info['fullname']))
+        text_to_buyer = 'Фиксация слота {} {} в {} у @{} ({}) успешно произведена'.format(supply_info['time'], supply_info['date'], supply_info['place_name'], user_data.username, user_data.full_name)
+        if len(admin_info) != 0:
+            text_to_buyer += '. Сообщение о фиксации слота отправлено тренеру @{} ({})'.format(admin_info['nick'], admin_info['fullname'])
+        context.bot.send_message(int(buyer_id), text_to_buyer)
 
-        context.bot.send_message(admin_info['id'], '{} {} в {} вместо @{} ({}) придёт @{} ({})'.format(supply_info['time'], supply_info['date'], supply_info['place_name'], user_data.username, user_data.full_name, buyer_info['nick'], buyer_info['fullname']))
+        if len(admin_info) != 0:
+            context.bot.send_message(admin_info['id'], '{} {} в {} вместо @{} ({}) придёт @{} ({})'.format(supply_info['time'], supply_info['date'], supply_info['place_name'], user_data.username, user_data.full_name, buyer_info['nick'], buyer_info['fullname']))
     else:
         do_reject(update, context, int(supply_id), int(buyer_id))
 
