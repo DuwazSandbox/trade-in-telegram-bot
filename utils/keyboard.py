@@ -3,19 +3,20 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 
 class KeyboardManager:
-    def __init__(self, update: Update, text: str):
+    def __init__(self, update: Update, text: str, width: int = 2):
         self._update = update
         self._text = text
         self._show_button_home = True
         self._is_first_msg = False
         self._keyboard = []
         self._back_action = ''
+        self._width = width
 
     def add_button(self, text: str, action: str) -> None:
         data = InlineKeyboardButton(text, callback_data = action)
         if len(self._keyboard) == 0:
             self._keyboard = [[data]]
-        elif len(self._keyboard[-1]) == 1:
+        elif len(self._keyboard[-1]) != self._width:
             self._keyboard[-1].append(data)
         else:
             self._keyboard.append([data])

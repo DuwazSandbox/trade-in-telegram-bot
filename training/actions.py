@@ -191,7 +191,7 @@ def choose_seller(update: Update, req: str) -> None:
         _send_text(update, req = req, text = 'Не найдено ни одного предложения')
         return
 
-    km = KeyboardManager(update, text = '')
+    km = KeyboardManager(update, text = '', width = 1)
 
     text = 'Выберите предложение:'
     for place_data in supplies:
@@ -297,7 +297,7 @@ def choose_cancel(update: Update, req: str) -> None:
         return
 
     text = 'Что желаете отменить?'
-    km = KeyboardManager(update, text = '')
+    km = KeyboardManager(update, text = '', width = 1)
 
     for place_data in supplies:
         place_name = place_data['place_name']
