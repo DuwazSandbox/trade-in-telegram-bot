@@ -447,7 +447,7 @@ class DatabaseAPI(DatabaseInternal):
     def get_opened_deals(self, date_start: str, user_id: int = None) -> (DatabaseError, list):
         wheres = {
             'trade_in_date': {
-                'sign': '>',
+                'sign': '>=',
                 'value': _reverse_date(date_start)
             },
             'canceled': False,
@@ -479,7 +479,7 @@ class DatabaseAPI(DatabaseInternal):
     def get_closed_deals(self, date_start: str, user_id: int = None) -> (DatabaseError, list):
         wheres = {
             'sell_records.trade_in_date': {
-                'sign': '>',
+                'sign': '>=',
                 'value': _reverse_date(date_start)
             },
             'buy_records.canceled': False
