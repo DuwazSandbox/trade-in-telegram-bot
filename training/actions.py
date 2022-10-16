@@ -39,7 +39,7 @@ class TrainingActions:
             elif action == 'buy':
                 buy_actions(update, context, req)
             elif action == 'cancel':
-                cancel_actions(update, req)
+                cancel_actions(update, context, req)
             elif action == 'restart':
                 restart(update, context)
             elif action == 'status':
@@ -350,7 +350,7 @@ def confirm_cancel(update: Update, cmd: list, req: str) -> None:
     km.set_back_action(req[0:req.rfind(',')])
     km.update()
 
-def do_cancel(update: Update, cmd: list, req: str) -> None:
+def do_cancel(update: Update, context: CallbackContext, cmd: list, req: str) -> None:
     action_id = cmd[1]
     if len(action_id) == 0 or action_id[0] not in ['b', 's'] or not action_id[1:].isdigit():
         _send_text(update, req = req, text = 'Возникла непредвиденная ошибка. Получены некорректные данные')
@@ -378,7 +378,26 @@ def do_cancel(update: Update, cmd: list, req: str) -> None:
     elif cancel_type == 'b':
         status = dbm.cancel_buy_record(int(supply_id))
         if status == DatabaseError.Ok:
-            _send_text(update, req = req, text = 'Отмена фиксации слота {} {} в {} прошла успешно'.format(supply_info['time'], supply_info['date'], supply_info['place_name']))
+            status, admin_info = dbm.get_user_info_by_nick(supply_info['admin'])
+            if status != DatabaseError.Ok:
+                _send_text(update, req = req, text = 'Возникла непредвиденная ошибка. Не удалось получить данные о тренере')
+                return
+
+            text_to_buyer = 'Отмена фиксации слота {} {} в {} прошла успешно'.format(supply_info['time'], supply_info['date'], supply_info['place_name'])
+            if len(admin_info) != 0:
+                text_to_seller += '. Сообщение об отмене отправлено тренеру @{} ({})'.format(admin_info['nick'], admin_info['fullname'])
+            _send_text(update, req = req, text = text_to_buyer)
+
+            user_data = update.callback_query.message.chat
+
+            text_to_seller = 'Фиксация вашего слота {} {} в {} пользователем @{} ({}) была отменена'.format(supply_info['time'], supply_info['date'], supply_info['place_name'], user_data.username, user_data.full_name)
+            if len(admin_info) != 0:
+                text_to_seller += '. Сообщение об отмене отправлено тренеру @{} ({})'.format(admin_info['nick'], admin_info['fullname'])
+            context.bot.send_message(supply_info['seller_id'], text_to_seller)
+
+            if len(admin_info) != 0:
+                context.bot.send_message(admin_info['id'], 'Пользователь @{} ({}) отменил фиксацию слота на {} {} в {}'.format(user_data.username, user_data.full_name, supply_info['time'], supply_info['date'], supply_info['place_name']))
+
             return
         else:
             _send_text(update, req = req, text = 'Возникла непредвиденная ошибка. Произвести отмену не удалось')
@@ -455,14 +474,14 @@ def buy_actions(update: Update, context: CallbackContext, req: str) -> None:
     else:
         logger.warning('Unknown command: %s', req)
 
-def cancel_actions(update: Update, req: str) -> None:
+def cancel_actions(update: Update, context: CallbackContext, req: str) -> None:
     cmd = req.split(',')
     if len(cmd) == 1:
         choose_cancel(update, req)
     elif len(cmd) == 2:
         confirm_cancel(update, cmd, req)
     elif len(cmd) == 3:
-        do_cancel(update, cmd, req)
+        do_cancel(update, context, cmd, req)
     else:
         logger.warning('Unknown command: %s', req)
 
